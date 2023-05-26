@@ -1,3 +1,5 @@
+import { Atom, SExpr, SExprHandler, findElement } from "./sexpr";
+
 //Helper classes
 export enum YesNo {
   yes,
@@ -253,6 +255,119 @@ export interface SymbolPin extends PIN_ELECTRICAL_TYPE, PIN_GRAPHIC_STYLE {
 }
 
 interface Raw {
-    toRaw(): any;
+  toRaw(): any;
 }
 
+export interface KicadSymbol extends SExpr {}
+
+export function setName(symbol: KicadSymbol, name: string) {
+  (symbol.childs[1] as Atom).value = name;
+  let i = 0;
+  findElement(symbol, ["symbol"])?.forEach((s) => {
+    (s.childs[1] as Atom).value =
+      name +
+      (s.childs[1] as Atom).value.substring(
+        (s.childs[1] as Atom).value.length - 4
+      );
+    i++;
+  });
+}
+
+export function getSymbol(
+  libPath: string,
+  sym: string
+): KicadSymbol {
+  let h = new SExprHandler(libPath);
+  let s = h.find(["kicad_symbol_lib", "symbol"]);
+  return (s as SExpr[]).find((e) => (e.childs[1] as Atom).value == sym) as KicadSymbol;
+}
+
+export function setOrCreateProperty(
+  symbol: KicadSymbol,
+  key: string,
+  value: string
+) {
+  let ps = findElement(symbol, ["property"]) as SExpr[];
+  let p: SExpr | undefined = ps.find((e) => (e.childs[1] as Atom).value == key);
+  if (p == undefined) {
+    let max =
+      1 +
+      Math.max(
+        ...ps.map((e) =>
+          Number.parseInt((findElement(e, ["id"])[0].childs[1] as Atom).value)
+        )
+      );
+    p = {
+      isAtom: false,
+      childs: [
+        { value: "property", isAtom: true, isQuoted: false },
+        { value: key, isAtom: true, isQuoted: true },
+        { value: value, isAtom: true, isQuoted: true },
+        {
+          childs: [
+            { value: "id", isAtom: true, isQuoted: false },
+            { value: max + "", isAtom: true, isQuoted: false },
+          ],
+          isAtom: false,
+        },
+        {
+          childs: [
+            { value: "at", isAtom: true, isQuoted: false },
+            { value: "0", isAtom: true, isQuoted: false },
+            { value: "0", isAtom: true, isQuoted: false },
+            { value: "0", isAtom: true, isQuoted: false },
+          ],
+          isAtom: false,
+        },
+        {
+          childs: [
+            { value: "effects", isAtom: true, isQuoted: false },
+            {
+              childs: [
+                { value: "font", isAtom: true, isQuoted: false },
+                {
+                  childs: [
+                    { value: "size", isAtom: true, isQuoted: false },
+                    { value: "1.27", isAtom: true, isQuoted: false },
+                    { value: "1.27", isAtom: true, isQuoted: false },
+                  ],
+                  isAtom: false,
+                },
+              ],
+              isAtom: false,
+            },
+            { value: "hide", isAtom: true, isQuoted: false },
+          ],
+          isAtom: false,
+        },
+      ],
+    };
+    symbol.childs.push(p);
+  }
+  (p.childs[1] as Atom).value = key;
+  (p.childs[2] as Atom).value = value;
+  return;
+}
+
+export function createLib() {
+  return {
+    isAtom: false,
+    childs: [
+      { isAtom: true, value: "kicad_symbol_lib", isQuoted: false },
+      {
+        isAtom: false,
+        childs: [
+          { isAtom: true, value: "version", isQuoted: false },
+          { isAtom: true, value: "20211014", isQuoted: false },
+        ],
+      },
+      {
+        isAtom: false,
+        childs: [
+          { isAtom: true, value: "generator", isQuoted: false },
+          { isAtom: true, value: "lib900gen", isQuoted: false },
+        ],
+      },
+    ],
+  } as SExpr;
+}

@@ -1,6 +1,7 @@
 import { createLib, getSymbol, setName, setOrCreateProperty } from "./kicadlib";
 import { SExpr, serializeSExp } from "./sexpr";
-import * as fs from "fs";
+import * as fs from 'fs';
+
 
 export interface DbPart {
   NAME: string;
@@ -28,11 +29,10 @@ export class LibMngr {
   writeToFiles(path: string) {
     Object.entries(this.libs).forEach((lib) => {
       const ser = serializeSExp(lib[1] as SExpr, 0);
-      console.log(ser);
-      //fs.writeFileSync(
-      //  path + lib[0] + ".kicad_sym",
-      //  ser
-      //);
+      fs.writeFileSync(
+        path + lib[0] + ".kicad_sym",
+        ser
+      );
     });
   }
 }
