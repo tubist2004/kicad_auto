@@ -44,12 +44,40 @@ async function addKicadParams(c: Connection, part: Part) {
     "SELECT DISTINCT * FROM `kicad` WHERE `partid` = " + part.ID + ";"
   );
   let row = result[0];
+  if (row[0] == undefined)
+    throw new Error();
   part.TARGET_LIB = row[0].target_lib;
   part.SRC_LIB = row[0].src_lib;
   part.SRC_PART = row[0].src_part;
   part.Footprint = row[0].footprint;
   part.kicadlibid = "" + row[0].id;
   return part;
+}
+
+async function addSourceParams(c: Connection, part: any) {
+  let result = await c.query<Kicadinfo[]>(
+    "SELECT *, (SELECT DISTINCT name FROM `manufacturer` WHERE `id` = `source`.`manufacturer_id`) as manufacturer FROM `source` WHERE `part_id` = " + part.ID + ";"
+  );
+  let rows = result[0];
+  rows.forEach(row => {
+    part["MC_" + (row as any)["manufacturer"]] = (row as any)["ordercode"];
+  });
+  return part as Part;
+}
+
+
+async function addDistributionParams(c: Connection, part: any) {
+  let result = await c.query<Kicadinfo[]>(
+    "SELECT *, \
+      (SELECT DISTINCT name FROM `distributor` WHERE `id` = `distribution`.`distributor_id`) as distributor \
+      FROM `distribution` \
+      WHERE `source_id` IN (SELECT ID FROM `source` WHERE `part_id` = " + part.ID + ");"
+  );
+  let rows = result[0];
+  rows.forEach(row => {
+    part["OC_" + (row as any)["distributor"]] = (row as any)["ordercode"];
+  });
+  return part as Part;
 }
 
 async function fillPart(
@@ -82,10 +110,16 @@ export async function loadTables(options: ConnectionOptions) {
   });
   let parts = await Promise.all(
     rawParts.map(async (rawPart): Promise<any> => {
-      let filledPart = (await fillPart(c, partclasses, rawPart)) as Part;
-      let kicadPart = await addKicadParams(c, filledPart);
-      return kicadPart;
+      try {
+        let filledPart = (await fillPart(c, partclasses, rawPart)) as Part;
+        let kicadPart = await addKicadParams(c, filledPart);
+        let sourcedPart = await addSourceParams(c, kicadPart);
+        let distributedPart = await addDistributionParams(c, sourcedPart);
+        return distributedPart;
+      } catch (e) {
+        return null;
+      }
     })
   );
-  return parts;
+  return parts.filter(part => part != null);
 }

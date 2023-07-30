@@ -1,0 +1,12 @@
+{
+  "client": "mysql2",
+  "connection": {
+    "host": "localhost",
+    "user": "root",
+    "password": "root",
+    "database": "parts",
+    "port": 43306
+  },
+  "filename": "src/database",
+  "extends": { "parts.calculation": "RowDataPacket" } 
+}
