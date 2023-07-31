@@ -1,32 +1,24 @@
-import { Pool } from "mysql2/promise";
+import { Pool, PoolConnection } from "mysql2/promise";
 import { createPool } from "mysql2/promise";
 import { CrawlerMouser } from "./crawlermouser";
-import { DistributionData } from "./crawler";
+import { Crawler, DistributionData } from "./crawler";
 import { CrawlerJlcplc } from "./crawlerjlcpcb";
 
 let crawlers = [new CrawlerMouser(), new CrawlerJlcplc()];
 
-function addToDatabase(c: Pool, part: DistributionData) {
-  let query =
-    "DELETE FROM `price` WHERE `distribution_id` = " + part.info.id + " ;";
-  return c.query(query).then((result) => {
-    part.prices.forEach((price) => {
-      query =
-        "INSERT INTO `price` (`distribution_id`, `value`, `min`, `mult`, `currency`) VALUES ( " +
-        part.info.id +
-        " ," +
-        price.price +
-        "," +
-        price.min +
-        "," +
-        price.mult +
-        ", (SELECT id FROM currency WHERE name = '" +
-        price.currency +
-        "'));";
-      return c.query(query);
-    });
+//remove old price data from database and put in the new one
+async function addToDatabase(c: Pool, part: DistributionData) {
+  let query = "DELETE FROM `price` WHERE ? ;";
+  await c.query(query, { distribution_id: part.info.id });
+  let queries = part.prices.map((price) => {
+    query = "INSERT INTO `price` (`distribution_id`, `value`, `min`, `mult`, `currency`) "
+      + "VALUES (?, ?, ?, ?, (SELECT id FROM currency WHERE name = ?) );";
+    return c.query(query, [part.info.id, price.price, price.min, price.mult, price.currency]);
   });
+  await Promise.all(queries);
 }
+
+
 let i = 0;
 let d = 0;
 
@@ -38,44 +30,34 @@ let pool = createPool({
   database: "parts",
   port: 3306,
 });
-  pool.getConnection()
-  .then((c) => {
-    return c
-      .query(
-        "SELECT `distribution`.*, `distributor`.`name` from `distribution` JOIN `distributor` ON `distribution`.`distributor_id` = `distributor`.`id`;"
-      )
-      .then((q) => {
-        let rows = q[0] as { id: number; ordercode: string; name: string }[];
-        let concat = crawlers
-          .map((crawler) =>
-            crawler.getUpdater(
-              rows.filter((row) => row.name == crawler.distributorName)
-            )
-          )
-          .flat();
-        concat.forEach((data$) => {
-          data$.then((data) => {
-            console.log(
-              "Downloaded " +
-                data.info.ordercode +
-                " (" +
-                ++d +
-                "/" +
-                concat.length +
-                ")"
-            );
-            addToDatabase(pool, data).then((k) =>
-              console.log(
-                "Added " +
-                  data.info.ordercode +
-                  " (" +
-                  ++i +
-                  "/" +
-                  concat.length +
-                  ")"
-              )
-            );
-          });
-        });
-      });
+
+function startCrawler(crawler: Crawler, allrows: { id: number; ordercode: string; name: string }[]) {
+  return crawler.getUpdater(
+    allrows.filter((row) => row.name == crawler.distributorName)
+  )
+}
+
+function processResult(data$: Promise<DistributionData>, l: number) {
+  data$.then((data) => {
+    console.log(`Downloaded ${data.info.ordercode} (${++d}/${l})`);
+    addToDatabase(pool, data).then((k) =>
+      console.log(`Added ${data.info.ordercode} (${++i}/${l})`)
+    );
   });
+}
+
+async function crawlPrices(pool: PoolConnection) {
+  let q = await pool.query(
+    "SELECT `distribution`.*, `distributor`.`name` from `distribution` " +
+    "JOIN `distributor` ON `distribution`.`distributor_id` = `distributor`.`id`;"
+  );
+  let rows = q[0] as { id: number; ordercode: string; name: string }[];
+  let concat = crawlers
+    .map((crawler) => startCrawler(crawler, rows))
+    .flat();
+  concat.forEach((data$) => processResult(data$, concat.length));
+}
+
+
+pool.getConnection()
+  .then(async (c) => crawlPrices(c));
