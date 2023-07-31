@@ -4,5 +4,6 @@ FROM node:18-alpine
 WORKDIR /app
 COPY . .
 RUN yarn install --production
-CMD [ "/bin/ls", "-l" ]
+RUN npm install
+CMD ["npx ts-node", "src/index.js"]
 EXPOSE 3100
