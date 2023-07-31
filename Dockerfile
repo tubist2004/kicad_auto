@@ -4,5 +4,5 @@ FROM node:18-alpine
 WORKDIR /app
 COPY . .
 RUN yarn install --production
-CMD ["sh"]
+CMD ["/bin/sh"]
 EXPOSE 3100
