@@ -4,6 +4,7 @@ FROM node:18-alpine
 WORKDIR /app
 COPY . .
 RUN yarn install --production
+RUN apk add --update nodejs nodejs-npm
 RUN npm install
-CMD ["npx ts-node", "src/index.js"]
+CMD ["sh"]
 EXPOSE 3100
