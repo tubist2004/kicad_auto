@@ -1,6 +1,8 @@
 import { parseStringPromise } from "xml2js";
 import { readFile } from "fs/promises";
-import { PoolConnection, ResultSetHeader, createPool } from "mysql2/promise";
+import { ResultSetHeader, createPool } from "mysql2/promise";
+
+//Code Aufräumaktion
 
 const file =
   "//home/markus/projekte/016_homeautomation/LevelSensorUs/111_ECAD/SensorBoard/SensorBoard.xml";

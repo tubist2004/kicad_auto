@@ -1,37 +1,20 @@
 {
   "name": "generator_v2",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Handle Kicad Library",
+  "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start:dev": "nodemon",
-    "start": "npm run build && node build/index.js",
-    "build": "rimraf ./build && ttsc"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@thi.ng/sexpr": "^0.4.20",
-    "@types/node": "^18.11.6",
-    "@types/xml2js": "^0.4.11",
-    "nodemon": "^2.0.20",
-    "rimraf": "^3.0.2",
-    "s-expression": "^3.1.1",
     "ts-node": "^10.9.1",
-    "tst-reflect-transformer": "^0.12.5",
-    "ttypescript": "^1.5.13",
-    "typescript": "^4.9.5"
+    "typescript": "^5.1.6"
   },
   "dependencies": {
-    "@rmp135/sql-ts": "^1.18.0",
     "axios": "^1.4.0",
-    "mysql2": "^3.3.1",
-    "node-fetch": "^3.3.1",
-    "npx": "^10.2.2",
-    "tst-reflect": "^0.12.0",
-    "xlsx": "^0.18.5",
-    "xml2js": "^0.4.23"
+    "mysql2": "^3.5.2",
+    "xml2js": "^0.6.2"
   }
 }

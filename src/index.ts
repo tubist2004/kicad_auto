@@ -1,5 +1,5 @@
 import { LibMngr } from "./libmngr";
-import { readOdsLib } from "./odslibreader";
+//import { readOdsLib } from "./odslibreader";
 import { loadTables } from "./sqllibreader";
 /*
 let parts = readOdsLib(
