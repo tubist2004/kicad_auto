@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
-   
-FROM node:18-alpine
-WORKDIR /app
+FROM node:14 as base
+WORKDIR /home/node/app
+COPY package*.json ./
+RUN npm i
 COPY . .
-RUN yarn install --production
-CMD ["/bin/sh"]
-EXPOSE 3100
+RUN npm i npx
+RUN npm i ts-node
+CMD ["npx", "ts-node", "./src/service"]
