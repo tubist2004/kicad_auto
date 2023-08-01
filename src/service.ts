@@ -22,9 +22,14 @@ pool.getConnection()
         });
 
         app.post("/startCrawler", (req, res) => {
-            crawlPrices(c);
-            res.end();
+            if (crawlPrices(c)) {
+                res.end();
+            }
+            else {
+                res.status(503).send('Crawler still running').end();
+            }
         });
+
 
         // start the Express server
         app.listen(7001, () => {

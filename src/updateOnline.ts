@@ -35,9 +35,9 @@ function startCrawler(crawler: Crawler, allrows: { id: number; ordercode: string
 }
 
 function processResult(data$: Promise<DistributionData>, l: number, counter: IntCounter) {
-  data$.then((data) => {
+  return data$.then((data) => {
     console.log(`Downloaded ${data.info.ordercode} (${++counter.d}/${l})`);
-    addToDatabase(pool, data).then((k) =>
+    return addToDatabase(pool, data).then((k) =>
       console.log(`Added ${data.info.ordercode} (${++counter.i}/${l})`)
     );
   });
@@ -48,7 +48,10 @@ class IntCounter {
   d = 0;
 }
 
-export async function crawlPrices(pool: PoolConnection) {
+let isRunning = false;
+
+async function doCrawling(pool: PoolConnection){
+  isRunning = true
   let counter = new IntCounter();
   let q = await pool.query(
     "SELECT `distribution`.*, `distributor`.`name` from `distribution` " +
@@ -58,5 +61,13 @@ export async function crawlPrices(pool: PoolConnection) {
   let concat = crawlers
     .map((crawler) => startCrawler(crawler, rows))
     .flat();
-  concat.forEach((data$) => processResult(data$, concat.length, counter));
+  await Promise.all(concat.map((data$) => processResult(data$, concat.length, counter)));
+  isRunning = false;
+}
+
+export function crawlPrices(pool: PoolConnection) {
+  if (isRunning) return false;
+  isRunning = true;
+  doCrawling(pool).then();
+  return true;
 }
