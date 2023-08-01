@@ -1,6 +1,7 @@
 import express from "express";
 import { crawlPrices } from "./updateOnline";
 import { createPool } from "mysql2/promise";
+import { calcRun } from "./calcrun";
 
 let app = express();
 
@@ -30,6 +31,10 @@ pool.getConnection()
             }
         });
 
+        app.post("/startCalcrun", (req, res) => {
+            calcRun(c).then();
+            res.end();
+        });
 
         // start the Express server
         app.listen(7001, () => {

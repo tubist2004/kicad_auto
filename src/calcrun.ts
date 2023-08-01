@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises";
-import { RowDataPacket, createPool } from "mysql2/promise";
+import { PoolConnection, RowDataPacket, createPool } from "mysql2/promise";
 import {
   calculationrunitemEntity,
   distributionEntity,
@@ -11,15 +11,7 @@ function sum(arr: number[]) {
   return arr.reduce((partialSum, a) => partialSum + a, 0);
 }
 
-let pool = createPool({
-  //host: "localhost",
-  host: "quittenweg4",
-  user: "root",
-  password: "root",
-  database: "parts",
-  port: 3306,
-});
-pool.getConnection().then(async (c) => {
+export async function calcRun(c: PoolConnection) {
   let query = await readFile(__dirname + "/calc.sql");
   c.query<
     (RowDataPacket &
@@ -77,11 +69,10 @@ pool.getConnection().then(async (c) => {
       rows = rows.concat(distsums as any);
       rows = rows.concat(dist);
       console.log(rows);
-      await pool.query("DELETE FROM `calculationrunitem`;");
+      await c.query("DELETE FROM `calculationrunitem`;");
       rows.forEach(async (e) => {
-        await pool.query("INSERT INTO `calculationrunitem` SET ?;", e);
+        await c.query("INSERT INTO `calculationrunitem` SET ?;", e);
       });
       return rows;
     })
-    .then(() => c.destroy());
-});
+};
