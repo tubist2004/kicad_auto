@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:14 as base
+FROM node:14 as kicad
 WORKDIR /home/node/app
 COPY package*.json ./
 RUN npm i
