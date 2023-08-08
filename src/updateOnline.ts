@@ -1,5 +1,4 @@
 import { Pool, PoolConnection } from "mysql2/promise";
-import { createPool } from "mysql2/promise";
 import { CrawlerMouser } from "./crawlermouser";
 import { Crawler, DistributionData } from "./crawler";
 import { CrawlerJlcplc } from "./crawlerjlcpcb";
@@ -7,7 +6,7 @@ import { CrawlerJlcplc } from "./crawlerjlcpcb";
 let crawlers = [new CrawlerMouser(), new CrawlerJlcplc()];
 
 //remove old price data from database and put in the new one
-async function addToDatabase(c: Pool, part: DistributionData) {
+async function addToDatabase(c: PoolConnection, part: DistributionData) {
   let query = "DELETE FROM `price` WHERE ? ;";
   await c.query(query, { distribution_id: part.info.id });
   let queries = part.prices.map((price) => {
