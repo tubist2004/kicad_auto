@@ -19,22 +19,13 @@ async function addToDatabase(c: Pool, part: DistributionData) {
 }
 
 
-let pool = createPool({
-  //host: "localhost",
-  host: "quittenweg4",
-  user: "root",
-  password: "root",
-  database: "parts",
-  port: 3306,
-});
-
 function startCrawler(crawler: Crawler, allrows: { id: number; ordercode: string; name: string }[]) {
   return crawler.getUpdater(
     allrows.filter((row) => row.name == crawler.distributorName)
   )
 }
 
-function processResult(data$: Promise<DistributionData>, l: number, counter: IntCounter) {
+function processResult(pool: PoolConnection, data$: Promise<DistributionData>, l: number, counter: IntCounter) {
   return data$.then((data) => {
     console.log(`Downloaded ${data.info.ordercode} (${++counter.d}/${l})`);
     return addToDatabase(pool, data).then((k) =>
@@ -61,7 +52,7 @@ async function doCrawling(pool: PoolConnection){
   let concat = crawlers
     .map((crawler) => startCrawler(crawler, rows))
     .flat();
-  await Promise.all(concat.map((data$) => processResult(data$, concat.length, counter)));
+  await Promise.all(concat.map((data$) => processResult(pool, data$, concat.length, counter)));
   isRunning = false;
 }
 
