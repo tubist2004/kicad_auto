@@ -33,7 +33,7 @@ pool.getConnection()
         });
 
         app.get("/isCrawling", (req, res) => {
-            res.send(isCrawling())
+            res.send({isCrawling: isCrawling()});
             res.end();
         });
 
