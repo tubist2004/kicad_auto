@@ -10,3 +10,4 @@ RUN npm i
 RUN npm i npx
 RUN npm i ts-node
 #CMD ["npx", "ts-node", "./src/service"]
+CMD ["bash"]
