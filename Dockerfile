@@ -7,7 +7,7 @@ RUN apt -y install npm
 RUN apt -y install software-properties-common
 RUN add-apt-repository --yes ppa:kicad/kicad-7.0-releases
 RUN apt update
-RUN apt -y install kicad-cli
+RUN apt -y install kicad
 RUN npm i
 COPY . .
 RUN npm i npx
