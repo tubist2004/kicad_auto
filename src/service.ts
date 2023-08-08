@@ -1,5 +1,5 @@
 import express from "express";
-import { crawlPrices } from "./updateOnline";
+import { crawlPrices, isCrawling } from "./updateOnline";
 import { createPool } from "mysql2/promise";
 import { calcRun } from "./calcrun";
 import { updateKicadProject } from "./projectrepos";
@@ -30,6 +30,11 @@ pool.getConnection()
             else {
                 res.status(503).send('Crawler still running').end();
             }
+        });
+
+        app.get("/isCrawling", (req, res) => {
+            res.send(isCrawling())
+            res.end();
         });
 
         app.post("/updateKicadProject", (req, res) => {

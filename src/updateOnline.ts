@@ -61,3 +61,7 @@ export function crawlPrices(pool: PoolConnection) {
   doCrawling(pool).then();
   return true;
 }
+
+export function isCrawling() {
+  return isRunning;
+}
