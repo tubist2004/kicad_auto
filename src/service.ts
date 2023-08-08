@@ -8,7 +8,7 @@ let app = express();
 
 let pool = createPool({
     //host: "localhost",
-    host: "quittenweg4.lan",
+    host: "mariadb",
     user: "root",
     password: "root",
     database: "parts",
