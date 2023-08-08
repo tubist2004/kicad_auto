@@ -4,10 +4,13 @@ WORKDIR /home/node/app
 COPY package*.json ./
 RUN apt update
 RUN apt -y install npm
-#RUN apt -y install kicad-cli
+RUN apt -y install software-properties-common
+RUN add-apt-repository --yes ppa:kicad/kicad-7.0-releases
+RUN apt update
+RUN apt -y install kicad-cli
 RUN npm i
-#COPY . .
+COPY . .
 RUN npm i npx
 RUN npm i ts-node
-#CMD ["npx", "ts-node", "./src/service"]
+CMD ["npx", "ts-node", "./src/service"]
 CMD ["bash"]
