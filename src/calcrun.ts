@@ -11,7 +11,7 @@ function sum(arr: number[]) {
   return arr.reduce((partialSum, a) => partialSum + a, 0);
 }
 
-export async function calcRun(c: PoolConnection) {
+export async function calcRun(c: PoolConnection, calcId: number) {
   let query = await readFile(__dirname + "/calc.sql");
   c.query<
     (RowDataPacket &
@@ -19,7 +19,7 @@ export async function calcRun(c: PoolConnection) {
       priceEntity &
       distributionEntity &
       calculationrunitemEntity)[]
-  >(query.toString(), [1])
+  >(query.toString(), [calcId])
     .then((calculations) => {
       return calculations[0];
     })

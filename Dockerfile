@@ -6,4 +6,5 @@ RUN npm i
 COPY . .
 RUN npm i npx
 RUN npm i ts-node
+RUN apk install kicad-cli
 CMD ["npx", "ts-node", "./src/service"]

@@ -2,12 +2,13 @@ import express from "express";
 import { crawlPrices } from "./updateOnline";
 import { createPool } from "mysql2/promise";
 import { calcRun } from "./calcrun";
+import { updateKicadProject } from "./projectrepos";
 
 let app = express();
 
 let pool = createPool({
     //host: "localhost",
-    host: "quittenweg4",
+    host: "quittenweg4.lan",
     user: "root",
     password: "root",
     database: "parts",
@@ -31,8 +32,18 @@ pool.getConnection()
             }
         });
 
-        app.post("/startCalcrun", (req, res) => {
-            calcRun(c).then();
+        app.post("/updateKicadProject", (req, res) => {
+            if (updateKicadProject(c)) {
+                res.end();
+            }
+            else {
+                res.status(503).send('Kicad Updater still running').end();
+            }
+        });
+
+        app.post("/calculation/:id/startCalcrun", (req, res) => {
+            let id = Number.parseInt(req.params["id"]);
+            calcRun(c, id).then();
             res.end();
         });
 
