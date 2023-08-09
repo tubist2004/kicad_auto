@@ -6,13 +6,19 @@ import { updateKicadProject } from "./projectrepos";
 
 let app = express();
 
+const mysql_host = process.env.MYSQL_HOST ?? "quittenweg4.lan";
+const mysql_user = process.env.MYSQL_USER ?? "root";
+const mysql_password = process.env.MYSQL_PASSWORD ?? "root";
+const mysql_database = process.env.MYSQL_DATABASE ?? "parts";
+const mysql_port = process.env.MYSQL_PORT ?? "3306";
+
 let pool = createPool({
     //host: "localhost",
-    host: "mariadb",
-    user: "root",
-    password: "root",
-    database: "parts",
-    port: 3306,
+    host: mysql_host,
+    user: mysql_user,
+    password: mysql_password,
+    database: mysql_database,
+    port: Number.parseInt(mysql_port),
 });
 
 
