@@ -3,6 +3,7 @@ import { crawlPrices, isCrawling } from "./updateOnline";
 import { createPool } from "mysql2/promise";
 import { calcRun } from "./calcrun";
 import { updateKicadProject } from "./projectrepos";
+import { getAllKicadLibs } from "./kicadctrl";
 
 let app = express();
 
@@ -39,8 +40,15 @@ pool.getConnection()
         });
 
         app.get("/isCrawling", (req, res) => {
-            res.send({isCrawling: isCrawling()});
+            res.send({ isCrawling: isCrawling() });
             res.end();
+        });
+
+        app.get("/kicadLibs", (req, res) => {
+            getAllKicadLibs().then((libs) => {
+                res.send(libs);
+                res.end();
+            });
         });
 
         app.post("/updateKicadProject", (req, res) => {
