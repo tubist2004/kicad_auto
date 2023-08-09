@@ -1,4 +1,6 @@
 import { readdir } from "fs/promises";
+import { exec } from "node:child_process";
+
 
 function getLibsFromFolder(src: string, prefix: string) {
     return readdir(src)
@@ -18,4 +20,35 @@ export async function getAllKicadLibs() {
     let templates = await getLibsFromFolder("./template", "📕 ")
     templates.push(... await getLibsFromFolder("/usr/share/kicad/symbols", "🌍 "));
     return templates;
+}
+
+
+function execP(
+    command: string,
+    options: { cwd?: string }) {
+    let p = new Promise<string>((resolve, reject) => {
+        exec(command, options, (error, stdout: string, stderr: string) => {
+            if (error) {
+                reject({ error, stderr });
+            }
+            else {
+                resolve(stdout)
+            }
+        })
+    });
+    return p;
+};
+
+export function getAllSymbolnames(lib: string) {
+    let svglist = [] as string[];
+    return execP("kicad-cli sym export svg " + lib, {})
+        .then(svgs => {
+            svglist = svgs.split("\n").map(line => line.split("'")[1]);
+            console.log(svglist);
+        })
+        .then(() => {
+            return execP("rm *.svg", {});
+        }).then((s) => {
+            return svglist;
+        });
 }
