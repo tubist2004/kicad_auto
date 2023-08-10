@@ -11,3 +11,4 @@ RUN apt -y install kicad
 RUN npm i
 COPY . .
 CMD ["npx", "ts-node", "./src/service"]
+CMD ["npx", "nodemon"]

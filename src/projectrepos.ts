@@ -106,7 +106,7 @@ export function updateKicadProject(c: PoolConnection) {
         console.log(o);
     }).catch((reason) => {
         console.log(reason.stderr);
-        let cli = "git pull ";
+        let cli = "git pull";
         console.log(cli);
         return execP(cli,
             { cwd: "test/" + PROJECTNAME }
