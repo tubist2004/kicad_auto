@@ -45,17 +45,23 @@ pool.getConnection()
         });
 
         app.get("/kicadLibs", (req, res) => {
-            getAllKicadLibs().then((libs) => {
-                res.send(libs);
-                res.end();
-            });
+            getAllKicadLibs()
+                .then((libs) => {
+                    res.send(libs);
+                    res.end();
+                }).catch(() => {
+                    res.status(404).end();
+                });;
         });
 
         app.get("/kicadSymbols/:lib", (req, res) => {
-            getAllSymbolnames(req.params["lib"]).then((symbols) => {
-                res.send(symbols);
-                res.end();
-            });
+            getAllSymbolnames(req.params["lib"])
+                .then((symbols) => {
+                    res.send(symbols);
+                    res.end();
+                }).catch(() => {
+                    res.status(404).end();
+                });
         });
 
         app.get("/kicadSymbolSvg/:lib/:symbol", (req, res) => {
