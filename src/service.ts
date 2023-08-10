@@ -64,7 +64,9 @@ pool.getConnection()
                     res.sendFile(svg, () => {
                         res.end();
                     });
-                });
+                }).catch(() =>
+                    res.status(404).send("").end()
+                );
         });
 
         app.post("/updateKicadProject", (req, res) => {
