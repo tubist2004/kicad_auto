@@ -3,7 +3,7 @@ import { crawlPrices, isCrawling } from "./updateOnline";
 import { createPool } from "mysql2/promise";
 import { calcRun } from "./calcrun";
 import { updateKicadProject } from "./projectrepos";
-import { getAllKicadLibs, getAllSymbolnames } from "./kicadctrl";
+import { getAllKicadLibs, getAllSymbolnames, getSymbolSvg } from "./kicadctrl";
 
 let app = express();
 
@@ -56,6 +56,15 @@ pool.getConnection()
                 res.send(symbols);
                 res.end();
             });
+        });
+
+        app.get("/kicadSymbolSvg/:lib/:symbol", (req, res) => {
+            getSymbolSvg(req.params["lib"], req.params["symbol"])
+                .then((svg) => {
+                    res.sendFile(svg, () => {
+                        res.end();
+                    });
+                });
         });
 
         app.post("/updateKicadProject", (req, res) => {

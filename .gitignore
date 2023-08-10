@@ -1,3 +1,4 @@
 node_modules
 kicadlibs/kicad-ESP8266
 test/*
+tmp/*

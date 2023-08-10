@@ -1,4 +1,4 @@
-import { readdir } from "fs/promises";
+import { readdir, readFile } from "fs/promises";
 import { exec } from "node:child_process";
 
 
@@ -50,5 +50,15 @@ export function getAllSymbolnames(lib: string) {
             return execP("rm *.svg", {});
         }).then((s) => {
             return svglist;
+        });
+}
+
+export function getSymbolSvg(lib: string, symbol: string) {
+    const cmd = "kicad-cli sym export svg -o tmp -s \"" + symbol + "\" " + lib;
+    return execP(cmd, {})
+        .then((s) => {
+            let path = process.cwd() + "/" + s.split("'")[3];
+            console.log(path);
+            return path;
         });
 }
