@@ -64,7 +64,6 @@ pool.getConnection()
                 });
         });
 
-        
         app.get("/kicadSymbolSvg/:lib/:symbol", (req, res) => {
             getSymbolSvg(req.params["lib"], req.params["symbol"])
                 .then((svg) => {
