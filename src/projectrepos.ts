@@ -94,6 +94,11 @@ let isUpdating = false;
 export function isRunning() {
     return isUpdating;
 }
+
+export function createJlcData(c: PoolConnection) {
+
+}
+
 export function updateKicadProject(c: PoolConnection) {
     if (isUpdating) return false;
     isUpdating = true;
@@ -101,7 +106,7 @@ export function updateKicadProject(c: PoolConnection) {
     console.log(cli);
     let version = "none";
     execP(cli,
-        { cwd: "test" }
+        { cwd: "tmp" }
     ).then(o => {
         console.log(o);
     }).catch((reason) => {
@@ -109,19 +114,19 @@ export function updateKicadProject(c: PoolConnection) {
         let cli = "git pull";
         console.log(cli);
         return execP(cli,
-            { cwd: "test/" + PROJECTNAME }
+            { cwd: "tmp/" + PROJECTNAME }
         );
     }).then(o=> {
         if (o) console.log(o);
         let cli = "git log --pretty=format:'%h' -n 1";
         return execP(cli,
-            { cwd: "test/" + PROJECTNAME }
+            { cwd: "tmp/" + PROJECTNAME }
         );
     }).then((o) => {
         if (o) console.log(o);
         version = o;
         let cli = "kicad-cli sch export python-bom "
-            + `test/${PROJECTNAME}/${PROJECTPATH}/${DESIGNNAME}.kicad_sch `
+            + `tmp/${PROJECTNAME}/${PROJECTPATH}/${DESIGNNAME}.kicad_sch `
             + "-o BOM.xml";
         console.log(cli);
         return execP(cli, {});
