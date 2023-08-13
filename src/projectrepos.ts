@@ -3,7 +3,7 @@ import { parseStringPromise } from "xml2js";
 import { readFile } from "fs/promises";
 import { ResultSetHeader, createPool, PoolConnection } from "mysql2/promise";
 
-const GITREPO = "https://github.com/tubist2004/LevelSensorUs";
+const GITREPO = "git@github.com:tubist2004/LevelSensorUs";
 const PROJECTNAME = "LevelSensorUs"
 const PROJECTPATH = "111_ECAD/SensorBoard";
 const DESIGNNAME = "SensorBoard"
