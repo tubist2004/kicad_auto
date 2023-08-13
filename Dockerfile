@@ -10,6 +10,7 @@ RUN apt update
 RUN apt -y install kicad
 RUN npm i
 RUN apt -y install ssh
+RUN < /dev/zero ssh-keygen -q -N ""
 COPY . .
 CMD ["npx", "ts-node", "./src/service"]
 CMD ["npx", "nodemon"]
