@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <export version="E">
   <design>
-    <source>/home/markus/projekte/900_library/kicad/generator_v2/test/LevelSensorUs/111_ECAD/SensorBoard/SensorBoard.kicad_sch</source>
-    <date>Di 08 Aug 2023 12:47:04 CEST</date>
+    <source>/home/markus/projekte/900_library/kicad/generator_v2/tmp/LevelSensorUs/111_ECAD/SensorBoard/SensorBoard.kicad_sch</source>
+    <date>So 20 Aug 2023 18:32:41 CEST</date>
     <tool>Eeschema 7.0.6-7.0.6~ubuntu23.04.1</tool>
     <textvar name="git_hash">Git hash: &lt;a91885b&gt;</textvar>
     <sheet number="1" name="/" tstamps="/">

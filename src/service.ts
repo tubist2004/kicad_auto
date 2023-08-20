@@ -2,7 +2,7 @@ import express from "express";
 import { crawlPrices, isCrawling } from "./updateOnline";
 import { createPool } from "mysql2/promise";
 import { calcRun } from "./calcrun";
-import { updateKicadProject } from "./projectrepos";
+import { updateJlcData, updateKicadProject } from "./projectrepos";
 import { getAllKicadLibs, getAllSymbolnames, getSymbolSvg } from "./kicadctrl";
 
 let app = express();
@@ -77,6 +77,15 @@ pool.getConnection()
 
         app.post("/updateKicadProject", (req, res) => {
             if (updateKicadProject(c)) {
+                res.end();
+            }
+            else {
+                res.status(503).send('Kicad Updater still running').end();
+            }
+        });
+
+        app.post("/updateJlcData", (req, res) => {
+            if (updateJlcData(c)) {
                 res.end();
             }
             else {
