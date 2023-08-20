@@ -1,8 +1,8 @@
 import { exec } from "node:child_process";
 import { parseStringPromise } from "xml2js";
-import { readFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import { ResultSetHeader, PoolConnection } from "mysql2/promise";
-import { v4, v5 } from "uuid";
+import { v4, v5, version } from "uuid";
 import { calculationrunEntity, calculationrunitemEntity } from "./database";
 
 const GITREPO = "git@github.com:tubist2004/LevelSensorUs";
@@ -131,8 +131,10 @@ interface KicadPnPFileLine {
     Side: string;
 }
 
-function exportPnPFile() {
+function gatherJlcData(c: PoolConnection) {
     let filename = "tmp/" + v4();
+    let lines: KicadPnPFileLine[];
+    let cItems: calculationrunitemEntity[];
     return updateFromGit().then((o) => {
         if (o) console.log(o);
         let cli = "kicad-cli pcb export pos "
@@ -146,140 +148,170 @@ function exportPnPFile() {
     }).then(o => {
         console.log(o);
         return readFile(filename);
+    }).then((file) => {
+        lines = file.toString()
+            .split("\n")
+            .filter(line => !line.startsWith("##"))
+            .map(line => line
+                .split("  ")
+                .map(element => element.trim())
+                .filter(element => element != '')
+            )
+            .map(element => ({
+                ref: element[0],
+                val: element[1],
+                Package: element[2],
+                PosX: element[3],
+                PosY: element[4],
+                Rot: element[5],
+                Side: element[6],
+            }));
+        return c.query(
+            "SELECT * FROM calculationrunitem WHERE ? AND ? AND ?",
+            [{
+                calculationrun_id: 1, //TODO
+            },
+            {
+                distributor_id: DISTRIBUTOR_ID_JLCPCB
+            },
+            {
+                calculationrunitemtype_id: 1
+            }]
+        )
+    }).then((resp) => {
+        cItems = resp[0] as calculationrunitemEntity[];
+        console.log(cItems);
+        let relPairs = cItems.map(cItem => ({
+            cItem: cItem, lines: lines
+                .filter(line => line.val == cItem.text), version: version
+        }));
+        return relPairs;
     });
 }
 
+function toCsv(items: any[], name: string) {
+    let csv = [Object
+        .keys(items[0])]
+        .concat(items.map(item => Object.values(item)
+            .map((value: any) => value.toString() as string)
+            .map(value => "\"" + value + "\"")))
+        .map(items => items.join(",")).join("\n");
+    writeFile("tmp/" + name, csv).then(() => { });
+    return csv;
+}
+
 export function updateJlcData(c: PoolConnection) {
-        if (isUpdating) return false;
-        isUpdating = true;
-        let lines: KicadPnPFileLine[];
-        let cItems: calculationrunitemEntity[];
-        exportPnPFile()
-            .then((file) => {
-                lines = file.toString()
-                    .split("\n")
-                    .filter(line => !line.startsWith("##"))
-                    .map(line => line
-                        .split("  ")
-                        .map(element => element.trim())
-                        .filter(element => element != '')
-                    )
-                    .map(element => ({
-                        ref: element[0],
-                        val: element[1],
-                        Package: element[2],
-                        PosX: element[3],
-                        PosY: element[4],
-                        Rot: element[5],
-                        Side: element[6],
-                    }));
-                return c.query(
-                    "SELECT * FROM calculationrunitem WHERE ? AND ? AND ?",
-                    [{
-                        calculationrun_id: 1, //TODO
-                    },
-                    {
-                        distributor_id: DISTRIBUTOR_ID_JLCPCB
-                    },
-                    {
-                        calculationrunitemtype_id: 1
-                    }]
-                )
-            }).then((resp) => {
-                cItems = resp[0] as calculationrunitemEntity[];
-                console.log(cItems);
-                let BomItems = cItems.map(cItem => {
-                    let relLines = lines
-                        .filter(line => line.val == cItem.text);
-                    let designators =
-                        relLines.map(line => line.ref)
-                            .join(",");
-                    return {
-                        'Comment': cItem.text,
-                        'Designator': designators,
-                        'Footprint': relLines[0].Package,
-                        'JLCPCB Part #（optional）': cItem.ordercode,
-                    };
-                });
-                console.log(BomItems);
-            });
-        return true;
-    }
-
-    //returns the versicn
-    function updateFromGit() {
-        let cli = "git clone " + GITREPO;
-        console.log(cli);
-        let version = "none";
-        return execP(cli,
-            { cwd: "tmp" }
-        ).then(o => {
-            console.log(o);
-        }).catch((reason) => {
-            console.log(reason.stderr);
-            let cli = "git pull";
-            console.log(cli);
-            return execP(cli,
-                { cwd: "tmp/" + PROJECTNAME }
-            );
-        }).then(o => {
-            if (o) console.log(o);
-            let cli = "git log --pretty=format:'%h' -n 1";
-            return execP(cli,
-                { cwd: "tmp/" + PROJECTNAME }
-            );
+    if (isUpdating) return false;
+    isUpdating = true;
+    gatherJlcData(c).then(relPairs => {
+        let BomItems = relPairs.map(relPair => {
+            let designators =
+                relPair.lines.map(line => line.ref)
+                    .join(",");
+            return {
+                'Comment': relPair.cItem.text,
+                'Designator': designators,
+                'Footprint': relPair.lines[0].Package,
+                'JLCPCB Part #（optional）': relPair.cItem.ordercode,
+            };
         });
-    }
+        let PnpItems = relPairs.map(pair => {
+            return pair.lines.map(line => {
+                let rot = Number.parseFloat(line.Rot);
+                if (rot < 0) {
+                    rot = 360 - rot;
+                }
+                let e: JlcPnPEntry = {
+                    Designator: line.ref,
+                    "Mid X": (Number.parseFloat(line.PosX) * 25.4).toFixed(4) + "mm",
+                    "Mid Y": (Number.parseFloat(line.PosY) * 25.4).toFixed(4) + "mm",
+                    Layer: line.Side == "bottom" ? "B" : "T",
+                    Rotation: rot.toFixed(0),
+                };
+                return e;
+            }).flat();
+        }).flat();
+        console.log(toCsv(BomItems, "bom.csv"));
+        console.log(toCsv(PnpItems, "pnp.csv"));
+        isUpdating = false;
+    });
+    return true;
+}
 
-    export function updateKicadProject(c: PoolConnection) {
-        if (isUpdating) return false;
-        isUpdating = true;
-        let version = "none";
-        updateFromGit()
-            .then((o) => {
-                if (o) console.log(o);
-                version = o;
-                let cli = "kicad-cli sch export python-bom "
-                    + `tmp/${PROJECTNAME}/${PROJECTPATH}/${DESIGNNAME}.kicad_sch `
-                    + "-o BOM.xml";
-                console.log(cli);
-                return execP(cli, {});
-            }).catch(e => {
-                console.error("Can't create BOM");
-            }).then(o => {
-                console.log(o);
-                return readFile("BOM.xml");
-            }).then((file) =>
-                parseStringPromise(file)
-            ).then((parsed) =>
-                parsed.export.components[0].comp
-            ).then(
-                extractXml
-            ).then(
-                aggregate
-            ).then((data) => c
-                .query(
-                    "INSERT INTO partlist (`name`,`sourcefile`,`date`, `version`) VALUES ('" +
-                    PROJECTNAME + "/" + DESIGNNAME +
-                    "', '" +
-                    DESIGNNAME + ".kicad_sch" +
-                    "', NOW()" +
-                    ", '" +
-                    version +
-                    "');"
-                )
-                .then((header) => {
-                    let newId = (header[0] as ResultSetHeader).insertId;
-                    return Promise.all(
-                        data.map((part) => c.query(
-                            "INSERT INTO partlistitem (`part_id`,`partlist_id`,`count`, `rank`, `value`) VALUES (?, ?, ?, ?, ?)",
-                            [part.part_id, newId, part.count, part.rank, part.value]
-                        ))
-                    );
-                })
-            ).then((retval) => {
-                isUpdating = false;
-                console.log(retval);
-            });
-        return true;
-    }
+//returns the versicn
+function updateFromGit() {
+    let cli = "git clone " + GITREPO;
+    console.log(cli);
+    let version = "none";
+    return execP(cli,
+        { cwd: "tmp" }
+    ).then(o => {
+        console.log(o);
+    }).catch((reason) => {
+        console.log(reason.stderr);
+        let cli = "git pull";
+        console.log(cli);
+        return execP(cli,
+            { cwd: "tmp/" + PROJECTNAME }
+        );
+    }).then(o => {
+        if (o) console.log(o);
+        let cli = "git log --pretty=format:'%h' -n 1";
+        return execP(cli,
+            { cwd: "tmp/" + PROJECTNAME }
+        );
+    });
+}
+
+export function updateKicadProject(c: PoolConnection) {
+    if (isUpdating) return false;
+    isUpdating = true;
+    let version = "none";
+    updateFromGit()
+        .then((o) => {
+            if (o) console.log(o);
+            version = o;
+            let cli = "kicad-cli sch export python-bom "
+                + `tmp/${PROJECTNAME}/${PROJECTPATH}/${DESIGNNAME}.kicad_sch `
+                + "-o BOM.xml";
+            console.log(cli);
+            return execP(cli, {});
+        }).catch(e => {
+            console.error("Can't create BOM");
+        }).then(o => {
+            console.log(o);
+            return readFile("BOM.xml");
+        }).then((file) =>
+            parseStringPromise(file)
+        ).then((parsed) =>
+            parsed.export.components[0].comp
+        ).then(
+            extractXml
+        ).then(
+            aggregate
+        ).then((data) => c
+            .query(
+                "INSERT INTO partlist (`name`,`sourcefile`,`date`, `version`) VALUES ('" +
+                PROJECTNAME + "/" + DESIGNNAME +
+                "', '" +
+                DESIGNNAME + ".kicad_sch" +
+                "', NOW()" +
+                ", '" +
+                version +
+                "');"
+            )
+            .then((header) => {
+                let newId = (header[0] as ResultSetHeader).insertId;
+                return Promise.all(
+                    data.map((part) => c.query(
+                        "INSERT INTO partlistitem (`part_id`,`partlist_id`,`count`, `rank`, `value`) VALUES (?, ?, ?, ?, ?)",
+                        [part.part_id, newId, part.count, part.rank, part.value]
+                    ))
+                );
+            })
+        ).then((retval) => {
+            isUpdating = false;
+            console.log(retval);
+        });
+    return true;
+}
