@@ -8,6 +8,11 @@ export interface DistributionInfo {
   name: string;
 }
 
+interface ExtraData {
+    property: string;
+    value: string;
+}
+
 export interface DistributionData {
     prices: {
         price: number,
@@ -16,6 +21,7 @@ export interface DistributionData {
         currency: string
     }[];
     info: DistributionInfo;
+    extraData?: ExtraData[]; 
 }
 
 export interface Crawler {

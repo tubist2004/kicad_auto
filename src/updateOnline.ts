@@ -9,12 +9,22 @@ let crawlers = [new CrawlerMouser(), new CrawlerJlcplc()];
 async function addToDatabase(c: PoolConnection, part: DistributionData) {
   let query = "DELETE FROM `price` WHERE ? ;";
   await c.query(query, { distribution_id: part.info.id });
+  query = "DELETE FROM `distribution_property` WHERE ? ;";
+  await c.query(query, { distribution_id: part.info.id });
   let queries = part.prices.map((price) => {
     query = "INSERT INTO `price` (`distribution_id`, `value`, `min`, `mult`, `currency`) "
       + "VALUES (?, ?, ?, ?, (SELECT id FROM currency WHERE name = ?) );";
     return c.query(query, [part.info.id, price.price, price.min, price.mult, price.currency]);
   });
   await Promise.all(queries);
+  if (part.extraData) {
+    queries = part.extraData?.map((data) => {
+      query = "INSERT INTO `distribution_property` (`distribution_id`, `property`, `value`) "
+        + "VALUES (?, ?, ?);"
+      return c.query(query, [part.info.id, data.property, data.value]);
+    });
+    await Promise.all(queries);
+  }
 }
 
 
@@ -40,7 +50,7 @@ class IntCounter {
 
 let isRunning = false;
 
-async function doCrawling(pool: PoolConnection){
+async function doCrawling(pool: PoolConnection) {
   isRunning = true
   let counter = new IntCounter();
   let q = await pool.query(

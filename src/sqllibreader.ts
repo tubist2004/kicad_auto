@@ -77,6 +77,16 @@ async function addDistributionParams(c: Connection, part: any) {
   rows.forEach(row => {
     part["OC_" + (row as any)["distributor"]] = (row as any)["ordercode"];
   });
+  result = await c.query<Kicadinfo[]>(
+    "SELECT * \
+      FROM `distribution_property` \
+      WHERE `distribution_ID` IN (SELECT ID FROM `distribution` \
+        WHERE `source_id` IN (SELECT ID FROM `source` WHERE `part_id` = " + part.ID + "));"
+  );
+  rows = result[0];
+  rows.forEach(row => {
+    part[(row as any)["property"]] = (row as any)["value"];
+  });
   return part as Part;
 }
 

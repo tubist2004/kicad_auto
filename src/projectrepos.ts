@@ -219,7 +219,7 @@ export function updateJlcData(c: PoolConnection) {
             return pair.lines.map(line => {
                 let rot = Number.parseFloat(line.Rot);
                 if (rot < 0) {
-                    rot = 360 - rot;
+                    rot = rot + 360;
                 }
                 let e: JlcPnPEntry = {
                     Designator: line.ref,

@@ -45,7 +45,20 @@ export class CrawlerMouser implements Crawler {
     let dData: DistributionData = {
       prices: prices,
       info: info,
+      extraData: [
+        { property: "STOCK_MOUSER", value: part.AvailabilityInStock ?? "" },
+        { property: "ORGMC_MOUSER", value: part.ManufacturerPartNumber ?? "" },
+        { property: "ORGMF_MOUSER", value: part.Manufacturer ?? "" },
+        { property: "DS_LINK_MOUSER", value: part.DataSheetUrl ?? "" },
+        { property: "IMG_LINK_MOUSER", value: part.ImagePath ?? "" },
+        { property: "LINK_MOUSER", value: part.ProductDetailUrl ?? "" },
+        { property: "CRAWL_DATE_MOUSER", value: new Date().toDateString() },
+      ]
     };
+    if (part.UnitWeightKg) {
+      dData.extraData?.push(
+        { property: "WEIGHT_MOUSER", value: "" + part.UnitWeightKg.UnitWeight });
+    }
     return dData;
   }
 
@@ -61,17 +74,17 @@ export class CrawlerMouser implements Crawler {
             return response.data.SearchResults.Parts;
           }
         ),
-        infos: junk,
+        infos: junk
       };
     });
     let dDatas = mouserParts.map((partsjunks) => {
       return {
         data: partsjunks.parts.then((parts) => {
           return parts.map((part, index) => {
-            return CrawlerMouser.convertPartData(part, partsjunks.infos.filter(i=>i.ordercode == part.MouserPartNumber)[0]);
+            return CrawlerMouser.convertPartData(part, partsjunks.infos.filter(i => i.ordercode == part.MouserPartNumber)[0]);
           });
         }),
-        infos: partsjunks.infos,
+        infos: partsjunks.infos
       };
     });
     let pdata = dDatas.map((dData) => {
