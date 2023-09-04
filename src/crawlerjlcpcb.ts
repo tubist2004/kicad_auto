@@ -71,7 +71,7 @@ export class CrawlerJlcplc implements Crawler {
               { property: "DS_LINK_JLCPCB", value: "" + compInfo.dataManualUrl },
               { property: "IMG_LINK_JLCPCB", value: "" + compInfo.minImage },
               { property: "LINK_JLCPCB", value: "https://jlcpcb.com/partdetail/" + compInfo.urlSuffix },
-              { property: "CRAWL_DATE_JLCPCB", value: new Date().toDateString() },
+              { property: "CRAWL_DATE_JLCPCB", value: new Date().toISOString()},
             ]
           };
           return data;

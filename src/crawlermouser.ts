@@ -52,7 +52,7 @@ export class CrawlerMouser implements Crawler {
         { property: "DS_LINK_MOUSER", value: part.DataSheetUrl ?? "" },
         { property: "IMG_LINK_MOUSER", value: part.ImagePath ?? "" },
         { property: "LINK_MOUSER", value: part.ProductDetailUrl ?? "" },
-        { property: "CRAWL_DATE_MOUSER", value: new Date().toDateString() },
+        { property: "CRAWL_DATE_MOUSER", value: new Date().toISOString() },
       ]
     };
     if (part.UnitWeightKg) {
