@@ -75,7 +75,7 @@ pool.getConnection()
                 );
         });
 
-        app.post("kicad_project/:id/update", (req, res) => {
+        app.post("/kicad_project/:id/update", (req, res) => {
             let id = Number.parseInt(req.params["id"]);
             if (updateKicadProject(c, id)) {
                 res.end();
@@ -85,7 +85,7 @@ pool.getConnection()
             }
         });
 
-        app.post("kicad_project/:id/updateJlcData", (req, res) => {
+        app.post("/kicad_project/:id/updateJlcData", (req, res) => {
             let id = Number.parseInt(req.params["id"]);
             if (updateJlcData(c, id)) {
                 res.end();
