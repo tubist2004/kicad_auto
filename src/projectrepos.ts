@@ -211,7 +211,7 @@ export function updateJlcData(c: PoolConnection, id: number) {
             return {
                 'Comment': relPair.cItem.text,
                 'Designator': designators,
-                'Footprint': relPair.lines[0].Package,
+                'Footprint': relPair.lines[0].Package ?? " ",
                 'JLCPCB Part #（optional）': relPair.cItem.ordercode,
             };
         });
