@@ -2,7 +2,7 @@
 <export version="E">
   <design>
     <source>/home/markus/projekte/900_library/kicad/generator_v2/tmp/LevelSensorUs/111_ECAD/SensorBoard/SensorBoard.kicad_sch</source>
-    <date>So 20 Aug 2023 19:12:34 CEST</date>
+    <date>Di 10 Okt 2023 15:10:52 CEST</date>
     <tool>Eeschema 7.0.6-7.0.6~ubuntu23.04.1</tool>
     <textvar name="git_hash">Git hash: &lt;a91885b&gt;</textvar>
     <sheet number="1" name="/" tstamps="/">
@@ -6212,8 +6212,17 @@
     <library logical="900_micros">
       <uri>/home/markus/projekte/900_library/kicad/900_micros.kicad_sym</uri>
     </library>
+    <library logical="900_opamps">
+      <uri>/home/markus/projekte/900_library/kicad/900_opamps.kicad_sym</uri>
+    </library>
+    <library logical="900_resistors">
+      <uri>/home/markus/projekte/900_library/kicad/900_resistors.kicad_sym</uri>
+    </library>
     <library logical="900_sensor">
       <uri>/home/markus/projekte/900_library/kicad/900_sensor.kicad_sym</uri>
+    </library>
+    <library logical="900_transistors">
+      <uri>/home/markus/projekte/900_library/kicad/900_transistors.kicad_sym</uri>
     </library>
   </libraries>
   <nets>

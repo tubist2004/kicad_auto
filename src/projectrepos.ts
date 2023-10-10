@@ -99,6 +99,7 @@ function aggregate(
 function execP(
     command: string,
     options: { cwd?: string }) {
+    console.log(command);
     let p = new Promise<string>((resolve, reject) => {
         exec(command, options, (error, stdout: string, stderr: string) => {
             if (error) {
@@ -140,7 +141,6 @@ function gatherJlcData(c: PoolConnection, id: number) {
         let cli = "kicad-cli pcb export pos "
             + `tmp/${o.name}/${o.path}/${o.designname}.kicad_pcb `
             + "-o " + filename;
-        console.log(cli);
         return execP(cli, {});
     }).catch(e => {
         console.error("Can't create BOM: " + e);
@@ -241,8 +241,7 @@ export function updateJlcData(c: PoolConnection, id: number) {
 //returns the versicn
 async function updateFromGit(c: PoolConnection, id: number) {
     let pInfo = await getKicadProjectInfo(c, id);
-    let cli = "git clone " + pInfo.gitrepo;
-    console.log(cli);
+    let cli = "git clone " + pInfo.gitrepo + " " + pInfo.name;
     let version = "none";
     return execP(cli,
         { cwd: "tmp" }
@@ -251,7 +250,6 @@ async function updateFromGit(c: PoolConnection, id: number) {
     }).catch((reason) => {
         console.log(reason.stderr);
         let cli = "git pull";
-        console.log(cli);
         return execP(cli,
             { cwd: "tmp/" + pInfo.name }
         );
@@ -285,14 +283,15 @@ export function updateKicadProject(c: PoolConnection, id: number) {
     updateFromGit(c, id)
         .then((o) => {
             if (o) console.log(o);
+            info = o;
             version = o.version;
             let cli = "kicad-cli sch export python-bom "
                 + `tmp/${o.name}/${o.path}/${o.designname}.kicad_sch `
                 + "-o BOM.xml";
-            console.log(cli);
             return execP(cli, {});
         }).catch(e => {
-            console.error("Can't create BOM");
+            console.error("Can't create BOM: ");
+            console.error(e);
         }).then(o => {
             console.log(o);
             return readFile("BOM.xml");
@@ -326,7 +325,7 @@ export function updateKicadProject(c: PoolConnection, id: number) {
             })
         ).then((retval) => {
             isUpdating = false;
-            console.log(retval);
+            //console.log(retval);
         });
     return true;
 }
