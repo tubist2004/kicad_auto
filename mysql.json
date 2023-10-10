@@ -1,0 +1,10 @@
+{
+    "client":"mysql",
+    "connection": {
+      "host": "quittenweg4.lan",
+      "user": "root",
+      "password": "root",
+      "database" : "parts"
+    },
+    "filename": "./src/database"
+  }

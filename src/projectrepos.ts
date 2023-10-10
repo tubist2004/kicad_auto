@@ -1,14 +1,14 @@
 import { exec } from "node:child_process";
 import { parseStringPromise } from "xml2js";
 import { readFile, writeFile } from "fs/promises";
-import { ResultSetHeader, PoolConnection } from "mysql2/promise";
+import { ResultSetHeader, PoolConnection, RowDataPacket } from "mysql2/promise";
 import { v4, v5, version } from "uuid";
-import { calculationrunEntity, calculationrunitemEntity } from "./database";
+import { calculationrunEntity, calculationrunitemEntity, kicad_projectsEntity } from "./database";
 
-const GITREPO = "git@github.com:tubist2004/LevelSensorUs";
-const PROJECTNAME = "LevelSensorUs"
-const PROJECTPATH = "111_ECAD/SensorBoard";
-const DESIGNNAME = "SensorBoard";
+//const GITREPO = "git@github.com:tubist2004/LevelSensorUs";
+//const PROJECTNAME = "LevelSensorUs"
+//const PROJECTPATH = "111_ECAD/SensorBoard";
+//const DESIGNNAME = "SensorBoard";
 const DISTRIBUTOR_ID_JLCPCB = 2;
 
 interface XmlComponent {
@@ -131,14 +131,14 @@ interface KicadPnPFileLine {
     Side: string;
 }
 
-function gatherJlcData(c: PoolConnection) {
+function gatherJlcData(c: PoolConnection, id: number) {
     let filename = "tmp/" + v4();
     let lines: KicadPnPFileLine[];
     let cItems: calculationrunitemEntity[];
-    return updateFromGit().then((o) => {
+    return updateFromGit(c, id).then((o) => {
         if (o) console.log(o);
         let cli = "kicad-cli pcb export pos "
-            + `tmp/${PROJECTNAME}/${PROJECTPATH}/${DESIGNNAME}.kicad_pcb `
+            + `tmp/${o.name}/${o.path}/${o.designname}.kicad_pcb `
             + "-o " + filename;
         console.log(cli);
         return execP(cli, {});
@@ -200,10 +200,10 @@ function toCsv(items: any[], name: string) {
     return csv;
 }
 
-export function updateJlcData(c: PoolConnection) {
+export function updateJlcData(c: PoolConnection, id: number) {
     if (isUpdating) return false;
     isUpdating = true;
-    gatherJlcData(c).then(relPairs => {
+    gatherJlcData(c, id).then(relPairs => {
         let BomItems = relPairs.map(relPair => {
             let designators =
                 relPair.lines.map(line => line.ref)
@@ -239,8 +239,9 @@ export function updateJlcData(c: PoolConnection) {
 }
 
 //returns the versicn
-function updateFromGit() {
-    let cli = "git clone " + GITREPO;
+async function updateFromGit(c: PoolConnection, id: number) {
+    let pInfo = await getKicadProjectInfo(c, id);
+    let cli = "git clone " + pInfo.gitrepo;
     console.log(cli);
     let version = "none";
     return execP(cli,
@@ -252,27 +253,41 @@ function updateFromGit() {
         let cli = "git pull";
         console.log(cli);
         return execP(cli,
-            { cwd: "tmp/" + PROJECTNAME }
+            { cwd: "tmp/" + pInfo.name }
         );
-    }).then(o => {
+    }).then(async o => {
         if (o) console.log(o);
         let cli = "git log --pretty=format:'%h' -n 1";
-        return execP(cli,
-            { cwd: "tmp/" + PROJECTNAME }
-        );
+        return {
+            version: await execP(cli,
+                {
+                    cwd: "tmp/" + pInfo.name
+                }
+            ),
+            ...pInfo
+        };
     });
 }
 
-export function updateKicadProject(c: PoolConnection) {
+export async function getKicadProjectInfo(c: PoolConnection, id: number): Promise<kicad_projectsEntity> {
+    return c.query("SELECT DISTINCT * FROM `kicad_projects` WHERE ?",
+        { id: id }
+    ).then(p => {
+        return (p as RowDataPacket)[0][0] as kicad_projectsEntity;
+    });
+}
+
+export function updateKicadProject(c: PoolConnection, id: number) {
     if (isUpdating) return false;
     isUpdating = true;
     let version = "none";
-    updateFromGit()
+    let info: kicad_projectsEntity = {};
+    updateFromGit(c, id)
         .then((o) => {
             if (o) console.log(o);
-            version = o;
+            version = o.version;
             let cli = "kicad-cli sch export python-bom "
-                + `tmp/${PROJECTNAME}/${PROJECTPATH}/${DESIGNNAME}.kicad_sch `
+                + `tmp/${o.name}/${o.path}/${o.designname}.kicad_sch `
                 + "-o BOM.xml";
             console.log(cli);
             return execP(cli, {});
@@ -292,9 +307,9 @@ export function updateKicadProject(c: PoolConnection) {
         ).then((data) => c
             .query(
                 "INSERT INTO partlist (`name`,`sourcefile`,`date`, `version`) VALUES ('" +
-                PROJECTNAME + "/" + DESIGNNAME +
+                info.name + "/" + info.designname +
                 "', '" +
-                DESIGNNAME + ".kicad_sch" +
+                info.designname + ".kicad_sch" +
                 "', NOW()" +
                 ", '" +
                 version +
